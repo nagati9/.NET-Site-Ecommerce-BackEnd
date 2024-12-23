@@ -30,6 +30,8 @@
         public int MarqueId { get; set; }
         [ForeignKey("MarqueId")]
         public MarqueVetement Marque { get; set; }
+        [Column("photo_path")]
+        public string PhotoPath { get; set; }
 
     }
 

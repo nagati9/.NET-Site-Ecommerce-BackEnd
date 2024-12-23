@@ -17,5 +17,11 @@ namespace Gestionnaire2.Data
         public DbSet<Models.TypeParfum> TypeParfums { get; set; }
         public DbSet<Models.TypeSkincare> TypeSkincare { get; set; }
         public DbSet<Models.TypeVetement> TypeVetements { get; set; }
+        public DbSet<Models.Utilisateur> utilisateurs { get; set; }
+        public DbSet<Models.Panier> paniers { get; set; }
+        public DbSet<Models.PanierProduit> paniersproduits { get; set; }
+      
+
+
     }
 }
