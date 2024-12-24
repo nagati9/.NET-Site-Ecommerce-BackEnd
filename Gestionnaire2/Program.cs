@@ -1,6 +1,9 @@
 using System;
+using System.Text;
 using Gestionnaire2.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +26,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -37,6 +43,7 @@ app.UseCors("AllowAngular");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+app.UseAuthentication(); // Ajoutez l'authentification
 
 app.MapControllers();
 
