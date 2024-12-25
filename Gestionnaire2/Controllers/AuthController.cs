@@ -12,6 +12,8 @@ namespace Gestionnaire2.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
+        string user;
+        int id;
 
         public AuthController(AppDbContext context)
         {
@@ -57,12 +59,38 @@ namespace Gestionnaire2.Controllers
                 return Unauthorized(new { message = "Email ou mot de passe incorrect." });
             }
 
-            // Si vous utilisez des jetons JWT :
-            // var token = GenerateJwtToken(utilisateur);
-            // return Ok(new { token });
+            // Stocker les informations de l'utilisateur dans la session
+            HttpContext.Session.SetString("UserId", utilisateur.Id.ToString());
+            HttpContext.Session.SetString("UserName", utilisateur.Nom);
 
-            // Sinon, retournez un message de succès :
-            return Ok(new { message = "Connexion réussie.", userId = utilisateur.Id });
+            return Ok(new { message = "Connexion réussie.", userId= utilisateur.Id, userName = utilisateur.Nom });
+        }
+        
+       [HttpGet("current-user")]
+public IActionResult GetCurrentUser()
+{
+    var userId = HttpContext.Session.GetInt32("userId");
+    if (userId == null)
+    {
+        return Unauthorized(new { message = "Utilisateur non authentifié." });
+    }
+
+    var utilisateur = _context.utilisateurs.SingleOrDefault(u => u.Id == userId.Value);
+    if (utilisateur == null)
+    {
+        return NotFound(new { message = "Utilisateur non trouvé." });
+    }
+
+    return Ok(new { userName = utilisateur.Nom });
+}
+
+
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear(); // Supprime toutes les sessions
+            return Ok(new { message = "Déconnexion réussie." });
         }
 
 

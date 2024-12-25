@@ -26,7 +26,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-
+builder.Services.AddDistributedMemoryCache(); // Pour stocker les sessions en mémoire
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Temps d'inactivité avant expiration
+    options.Cookie.HttpOnly = true; // Plus sécurisé
+    options.Cookie.IsEssential = true;
+});
 
 
 var app = builder.Build();
@@ -41,7 +47,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAngular");
 
 app.UseHttpsRedirection();
-
+app.UseSession();
 app.UseAuthorization();
 app.UseAuthentication(); // Ajoutez l'authentification
 
