@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Gestionnaire2.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Gestionnaire2.Data
 {
@@ -7,10 +8,8 @@ namespace Gestionnaire2.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         // Ajoutez vos DbSet ici (exemple pour une table Users)
+        public DbSet<Produit> Produits { get; set; }
         public DbSet<Models.Test> Tests { get; set; }
-        public DbSet<Models.Parfum> Parfums { get; set; }
-        public DbSet<Models.Skincare> Skincares { get; set; }
-        public DbSet<Models.Vetement> Vetements { get; set; }
         public DbSet<Models.MarqueParfum> MarqueParfums { get; set; }
         public DbSet<Models.MarqueSkincare> MarqueSkincares { get; set; }
         public DbSet<Models.MarqueVetement> MarqueVetements { get; set; }

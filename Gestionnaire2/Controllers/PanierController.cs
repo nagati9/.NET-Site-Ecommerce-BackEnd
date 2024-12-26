@@ -20,9 +20,21 @@ namespace Gestionnaire2.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Panier>>> GetPaniers()
         {
-            return await _context.paniers.Include(p => p.Produits).ToListAsync();
+            return await _context.paniers.ToListAsync();
         }
+        [HttpGet("GetByUtilisateur/{utilisateurId}")]
+        public async Task<IActionResult> GetByUtilisateur(int utilisateurId)
+        {
+            var panier = await _context.paniers                            
+                .FirstOrDefaultAsync(p => p.UtilisateurId == utilisateurId);
 
+            if (panier == null)
+            {
+                return NotFound("Panier non trouvé.");
+            }
+
+            return Ok(panier);
+        }
         // GET: api/Panier/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Panier>> GetPanier(int id)

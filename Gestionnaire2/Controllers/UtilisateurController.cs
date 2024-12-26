@@ -47,11 +47,22 @@ namespace Gestionnaire2.Controllers
                 return BadRequest("Un utilisateur avec cet email existe déjà.");
             }
 
+            // Ajouter l'utilisateur
             _context.utilisateurs.Add(utilisateur);
+            await _context.SaveChangesAsync();
+
+            // Créer un panier vide pour cet utilisateur
+            var panier = new Panier
+            {
+                UtilisateurId = utilisateur.Id,
+                Produits = new List<PanierProduit>()
+            };
+            _context.paniers.Add(panier);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetUtilisateur), new { id = utilisateur.Id }, utilisateur);
         }
+
 
         // PUT: api/Utilisateur/5
         [HttpPut("{id}")]
