@@ -75,6 +75,7 @@ namespace Gestionnaire2.Controllers
             {
                 Subject = new ClaimsIdentity(new[]
                 {
+               new Claim("id", utilisateur.Id.ToString()),
             new Claim(ClaimTypes.Name, utilisateur.Nom),
             new Claim(ClaimTypes.NameIdentifier, utilisateur.Id.ToString())
         }),

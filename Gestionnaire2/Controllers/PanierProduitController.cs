@@ -3,6 +3,7 @@ using Gestionnaire2.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -73,27 +74,33 @@ namespace Gestionnaire2.Controllers
                 return StatusCode(500, new { message = "Erreur interne lors de l'ajout au panier.", details = ex.Message });
             }
         }
-
+        [Authorize]
         [HttpGet("GetProduitsPanier")]
         public IActionResult GetProduitsPanier()
         {
-            // Vérifier si l'utilisateur est connecté
+            // Vérifiez si l'utilisateur est connecté
             if (User.Identity == null || !User.Identity.IsAuthenticated)
             {
                 return Unauthorized(new { message = "Utilisateur non authentifié." });
             }
 
-            // Récupérer l'utilisateur connecté
-            var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            // Récupérez l'utilisateur connecté
+            var idClaim = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+            if (string.IsNullOrEmpty(idClaim))
+            {
+                return Unauthorized(new { message = "Impossible de récupérer l'identifiant de l'utilisateur." });
+            }
 
-            // Vérifier si l'utilisateur a un panier
+            var userId = int.Parse(idClaim);
+
+            // Vérifiez si l'utilisateur a un panier
             var panier = _context.paniers.FirstOrDefault(p => p.UtilisateurId == userId);
             if (panier == null)
             {
                 return NotFound(new { message = "Panier introuvable pour cet utilisateur." });
             }
 
-            // Récupérer les produits dans le panier
+            // Récupérez les produits dans le panier
             var produitsPanier = _context.paniersproduits
                 .Where(pp => pp.PanierId == panier.Id)
                 .Select(pp => new
@@ -102,7 +109,15 @@ namespace Gestionnaire2.Controllers
                     pp.ProduitId,
                     pp.Quantite,
                     ProduitNom = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).Nom,
-                    ProduitPrix = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).Prix
+                    ProduitPrix = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).Prix,
+                    ProduitPhotos = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).PhotoPath,
+                    TypeProduit = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).TypeProduit,
+                    MarqueSkincare = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).MarqueSkincare,
+                    MarqueParfum = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).MarqueParfum,
+                    MarqueVetement = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).MarqueVetement,
+                    Description = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).Description,
+                    Stock = _context.Produits.FirstOrDefault(p => p.Id == pp.ProduitId).Stock
+
                 })
                 .ToList();
 
@@ -113,6 +128,24 @@ namespace Gestionnaire2.Controllers
 
             return Ok(produitsPanier);
         }
+
+        [Authorize]
+        [HttpDelete("Delete/{id}")]
+        public async Task<IActionResult> DeleteFromPanier(int id)
+        {
+            var panierProduit = await _context.paniersproduits.FindAsync(id);
+
+            if (panierProduit == null)
+            {
+                return NotFound(new { message = "Produit non trouvé dans le panier." });
+            }
+
+            _context.paniersproduits.Remove(panierProduit);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Produit supprimé avec succès." });
+        }
+
 
     }
 }
