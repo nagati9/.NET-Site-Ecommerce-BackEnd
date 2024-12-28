@@ -22,7 +22,6 @@ namespace Gestionnaire2.Controllers
         }
 
         [Authorize]
-        // POST: api/PanierProduit/AddToPanier/{produitId}/{quantite}
         [HttpPost("AddToPanier/{produitId}/{quantite}")]
         public async Task<IActionResult> AddToPanier(int produitId, int quantite)
         {
@@ -56,17 +55,28 @@ namespace Gestionnaire2.Controllers
                     return NotFound(new { message = "Produit introuvable." });
                 }
 
-                // Ajouter le produit au panier
-                var panierProduitEntity = new PanierProduit
+                // Vérifier si le produit est déjà dans le panier
+                var panierProduit = _context.paniersproduits
+                    .FirstOrDefault(pp => pp.PanierId == panier.Id && pp.ProduitId == produitId);
+
+                if (panierProduit != null)
                 {
-                    PanierId = panier.Id,
-                    ProduitId = produitId,
-                    Quantite = quantite
-                };
+                    // Si le produit existe, augmenter la quantité
+                    panierProduit.Quantite += quantite;
+                }
+                else
+                {
+                    // Sinon, ajouter une nouvelle entrée
+                    panierProduit = new PanierProduit
+                    {
+                        PanierId = panier.Id,
+                        ProduitId = produitId,
+                        Quantite = quantite
+                    };
+                    _context.paniersproduits.Add(panierProduit);
+                }
 
-                _context.paniersproduits.Add(panierProduitEntity);
                 await _context.SaveChangesAsync();
-
                 return Ok(new { message = "Produit ajouté au panier avec succès." });
             }
             catch (Exception ex)
@@ -74,6 +84,7 @@ namespace Gestionnaire2.Controllers
                 return StatusCode(500, new { message = "Erreur interne lors de l'ajout au panier.", details = ex.Message });
             }
         }
+
         [Authorize]
         [HttpGet("GetProduitsPanier")]
         public IActionResult GetProduitsPanier()
@@ -130,21 +141,61 @@ namespace Gestionnaire2.Controllers
         }
 
         [Authorize]
-        [HttpDelete("Delete/{id}")]
-        public async Task<IActionResult> DeleteFromPanier(int id)
+        [HttpDelete("DeleteFromPanier/{produitId}/{quantite}")]
+        public async Task<IActionResult> DeleteFromPanier(int produitId, int quantite)
         {
-            var panierProduit = await _context.paniersproduits.FindAsync(id);
-
-            if (panierProduit == null)
+            // Vérifier si l'utilisateur est connecté
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
             {
-                return NotFound(new { message = "Produit non trouvé dans le panier." });
+                return Unauthorized(new { message = "Utilisateur non authentifié." });
             }
 
-            _context.paniersproduits.Remove(panierProduit);
-            await _context.SaveChangesAsync();
+            try
+            {
+                // Récupérer l'utilisateur connecté
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                {
+                    return Unauthorized(new { message = "Utilisateur non authentifié." });
+                }
+                var userId = int.Parse(userIdClaim);
 
-            return Ok(new { message = "Produit supprimé avec succès." });
+                // Vérifier si l'utilisateur a un panier
+                var panier = _context.paniers.FirstOrDefault(p => p.UtilisateurId == userId);
+                if (panier == null)
+                {
+                    return NotFound(new { message = "Panier introuvable pour cet utilisateur." });
+                }
+
+                // Vérifier si le produit est dans le panier
+                var panierProduit = _context.paniersproduits
+                    .FirstOrDefault(pp => pp.PanierId == panier.Id && pp.ProduitId == produitId);
+
+                if (panierProduit == null)
+                {
+                    return NotFound(new { message = "Produit non trouvé dans le panier." });
+                }
+
+                if (panierProduit.Quantite > quantite)
+                {
+                    // Réduire la quantité
+                    panierProduit.Quantite -= quantite;
+                }
+                else
+                {
+                    // Supprimer le produit du panier
+                    _context.paniersproduits.Remove(panierProduit);
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Produit mis à jour dans le panier avec succès." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur interne lors de la mise à jour du panier.", details = ex.Message });
+            }
         }
+
 
 
     }
