@@ -141,8 +141,8 @@ namespace Gestionnaire2.Controllers
         }
 
         [Authorize]
-        [HttpDelete("DeleteFromPanier/{produitId}/{quantite}")]
-        public async Task<IActionResult> DeleteFromPanier(int produitId, int quantite)
+        [HttpDelete("DeleteFromPanier/{produitId}")]
+        public async Task<IActionResult> DeleteFromPanier(int produitId)
         {
             // Vérifier si l'utilisateur est connecté
             if (User.Identity == null || !User.Identity.IsAuthenticated)
@@ -176,16 +176,10 @@ namespace Gestionnaire2.Controllers
                     return NotFound(new { message = "Produit non trouvé dans le panier." });
                 }
 
-                if (panierProduit.Quantite > quantite)
-                {
-                    // Réduire la quantité
-                    panierProduit.Quantite -= quantite;
-                }
-                else
-                {
+              
                     // Supprimer le produit du panier
                     _context.paniersproduits.Remove(panierProduit);
-                }
+                
 
                 await _context.SaveChangesAsync();
                 return Ok(new { message = "Produit mis à jour dans le panier avec succès." });
@@ -197,6 +191,60 @@ namespace Gestionnaire2.Controllers
         }
 
 
+        [Authorize]
+        [HttpPut("UpdateCartItem/{produitId}/{nouvelleQuantite}")]
+        public async Task<IActionResult> UpdateCartItem(int produitId, int nouvelleQuantite)
+        {
+            // Vérifier si l'utilisateur est authentifié
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Unauthorized(new { message = "Utilisateur non authentifié." });
+            }
+
+            try
+            {
+                // Récupérer l'ID de l'utilisateur connecté
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null)
+                {
+                    return Unauthorized(new { message = "Utilisateur non authentifié." });
+                }
+                var userId = int.Parse(userIdClaim);
+
+                // Vérifier si l'utilisateur a un panier
+                var panier = await _context.paniers.FirstOrDefaultAsync(p => p.UtilisateurId == userId);
+                if (panier == null)
+                {
+                    return NotFound(new { message = "Panier introuvable pour cet utilisateur." });
+                }
+
+                // Vérifier si le produit est dans le panier
+                var panierProduit = await _context.paniersproduits
+                    .FirstOrDefaultAsync(pp => pp.PanierId == panier.Id && pp.ProduitId == produitId);
+
+                if (panierProduit == null)
+                {
+                    return NotFound(new { message = "Produit non trouvé dans le panier." });
+                }
+
+                // Mettre à jour la quantité ou supprimer le produit si la nouvelle quantité est zéro
+                if (nouvelleQuantite > 0)
+                {
+                    panierProduit.Quantite = nouvelleQuantite;
+                }
+                else
+                {
+                    _context.paniersproduits.Remove(panierProduit);
+                }
+
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Quantité mise à jour avec succès." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erreur interne lors de la mise à jour de la quantité.", details = ex.Message });
+            }
+        }
 
     }
 }
