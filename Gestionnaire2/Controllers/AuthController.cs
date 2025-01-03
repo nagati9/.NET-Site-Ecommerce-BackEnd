@@ -38,7 +38,16 @@ namespace Gestionnaire2.Controllers
             {
                 Email = registerDto.Email,
                 MotDePasse = PasswordHasher.HashPassword(registerDto.Password),
-                Nom = registerDto.Nom
+                Nom = registerDto.Nom,
+                Prenom = registerDto.Prenom,
+                DateDeNaissance = registerDto.DateDeNaissance,
+                Telephone = registerDto.Telephone,
+                IndicatifTelephone = registerDto.IndicatifTelephone,
+                Adresse = registerDto.Adresse,
+                Ville = registerDto.Ville,
+                CodePostal = registerDto.CodePostal,
+                Pays = registerDto.Pays,
+                GenreId = registerDto.GenreId
             };
 
             _context.utilisateurs.Add(utilisateur);
@@ -55,7 +64,6 @@ namespace Gestionnaire2.Controllers
 
             return Ok(new { message = "Utilisateur et panier créés avec succès." });
         }
-
 
 
         [HttpPost("signin")]
@@ -105,7 +113,45 @@ namespace Gestionnaire2.Controllers
             return Ok(new { userName });
         }
 
+        [HttpGet("Get-Profile")]
+        public async Task<IActionResult> GetProfile()
+        {
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Unauthorized(new { message = "Utilisateur non authentifié." });
+            }
 
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return BadRequest(new { message = "Identifiant utilisateur invalide." });
+            }
+
+            var utilisateur = await _context.utilisateurs.FirstOrDefaultAsync(u => u.Id == userId);
+            if (utilisateur == null)
+            {
+                return NotFound(new { message = "Utilisateur non trouvé." });
+            }
+
+            // Retourner l'objet utilisateur
+            return Ok(new
+            {
+                utilisateur.Id,
+                utilisateur.Nom,
+                utilisateur.Prenom,
+                utilisateur.Email,
+                utilisateur.GenreId,
+                utilisateur.Telephone,
+                utilisateur.Adresse,
+                utilisateur.Ville,
+                utilisateur.CodePostal,
+                utilisateur.DateDeNaissance,
+                utilisateur.IndicatifTelephone,
+                utilisateur.Pays
+                
+                // Ajouter d'autres champs pertinents
+            });
+        }
 
 
         [HttpPost("logout")]
