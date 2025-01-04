@@ -65,7 +65,6 @@ namespace Gestionnaire2.Controllers
             return Ok(new { message = "Utilisateur et panier créés avec succès." });
         }
 
-
         [HttpPost("signin")]
         public IActionResult SignIn([FromBody] LoginDto loginDto)
         {
@@ -99,6 +98,46 @@ namespace Gestionnaire2.Controllers
                 token = tokenHandler.WriteToken(token),
                 userName = utilisateur.Nom
             });
+        }
+
+        [HttpPut("Update-Profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] ProfilDTO utilisateurDto)
+        {
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Unauthorized(new { message = "Utilisateur non authentifié." });
+            }
+
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return BadRequest(new { message = "Identifiant utilisateur invalide." });
+            }
+
+            var utilisateur = await _context.utilisateurs.FirstOrDefaultAsync(u => u.Id == userId);
+            if (utilisateur == null)
+            {
+                return NotFound(new { message = "Utilisateur non trouvé." });
+            }
+
+            // Mise à jour des champs de l'utilisateur
+            utilisateur.Nom = utilisateurDto.Nom;
+            utilisateur.Prenom = utilisateurDto.Prenom;
+            utilisateur.Email = utilisateurDto.Email;
+            utilisateur.DateDeNaissance = utilisateurDto.DateDeNaissance;
+            utilisateur.Telephone = utilisateurDto.Telephone;
+            utilisateur.IndicatifTelephone = utilisateurDto.IndicatifTelephone;
+            utilisateur.Adresse = utilisateurDto.Adresse;
+            utilisateur.Ville = utilisateurDto.Ville;
+            utilisateur.CodePostal = utilisateurDto.CodePostal;
+            utilisateur.Pays = utilisateurDto.Pays;
+            utilisateur.GenreId = utilisateurDto.GenreId;
+            // Ajoutez ou mettez à jour d'autres champs si nécessaire
+
+            _context.utilisateurs.Update(utilisateur);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Profil mis à jour avec succès." });
         }
 
         [HttpGet("current-user")]
@@ -153,7 +192,6 @@ namespace Gestionnaire2.Controllers
             });
         }
 
-
         [HttpPost("logout")]
         public IActionResult Logout()
         {
@@ -161,6 +199,37 @@ namespace Gestionnaire2.Controllers
             return Ok(new { message = "Déconnexion réussie." });
         }
 
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+        {
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                return Unauthorized(new { message = "Utilisateur non authentifié." });
+            }
+
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return BadRequest(new { message = "Identifiant utilisateur invalide." });
+            }
+
+            var utilisateur = await _context.utilisateurs.FindAsync(userId);
+            if (utilisateur == null)
+            {
+                return NotFound(new { message = "Utilisateur non trouvé." });
+            }
+
+            // Vérification de l'ancien mot de passe
+            if (!PasswordHasher.VerifyPassword(changePasswordDto.OldPassword, utilisateur.MotDePasse))
+            {
+                return BadRequest(new { message = "L'ancien mot de passe est incorrect." });
+            }
+            // Mise à jour avec le nouveau mot de passe
+            utilisateur.MotDePasse = PasswordHasher.HashPassword(changePasswordDto.NewPassword);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Mot de passe mis à jour avec succès." });
+        }
 
     }
 }

@@ -50,5 +50,10 @@ namespace Gestionnaire2.DTO
         public string Email { get; set; }
         public string Password { get; set; }
     }
+    public class ChangePasswordDto
+    {
+        public string OldPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
 
 }
