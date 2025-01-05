@@ -21,7 +21,7 @@ namespace Gestionnaire2.DTO
         public string Prenom { get; set; }
 
         [DataType(DataType.Date)]
-        public DateTime DateDeNaissance { get; set; }
+        public DateOnly DateDeNaissance { get; set; }
 
         [StringLength(20)]
         [Phone]

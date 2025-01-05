@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -231,5 +232,26 @@ namespace Gestionnaire2.Controllers
             return Ok(new { message = "Mot de passe mis à jour avec succès." });
         }
 
+        [HttpGet("get-location")]
+        public IActionResult GetLocation()
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create("https://ipapi.co/json/");
+                request.UserAgent = "ipapi.co/#c-sharp-v1.03";
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
+                {
+                    string result = reader.ReadToEnd();
+                    return Ok(result); // Return the fetched data as JSON
+                }
+            }
+            catch (WebException ex)
+            {
+                // Handle the error appropriately
+                return StatusCode((int)HttpStatusCode.InternalServerError, "Error fetching location data: " + ex.Message);
+            }
+        }
     }
 }

@@ -22,7 +22,7 @@ namespace Gestionnaire2.Models
 
         [DataType(DataType.Date)]
         [Column("dateDeNaissance")]
-        public DateTime DateDeNaissance { get; set; } // Date de naissance de l'utilisateur
+        public DateOnly DateDeNaissance { get; set; } // Date de naissance de l'utilisateur
 
         [Required]
         [StringLength(255)]

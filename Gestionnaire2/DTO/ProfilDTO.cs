@@ -15,7 +15,7 @@ namespace Gestionnaire2.DTO
         public string Prenom { get; set; } // Prénom de l'utilisateur
 
         
-        public DateTime DateDeNaissance { get; set; } // Date de naissance de l'utilisateur
+        public DateOnly DateDeNaissance { get; set; } // Date de naissance de l'utilisateur
 
       
         public string Email { get; set; } // Email unique
